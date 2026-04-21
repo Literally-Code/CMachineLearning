@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "main.h"
 #include "matrix.h"
 
 int main(int argc, char** argv)
@@ -14,6 +13,6 @@ int main(int argc, char** argv)
     randMatrix(&newMatrix);
     printMatrix(&newMatrix);
     dotP(dest, vector, &newMatrix);
-    printf("%f %f\n", dest[0], dest[1]);
+    printf("Matrix\n%f %f\n", dest[0], dest[1]);
 }
 
