@@ -1,21 +1,26 @@
+#ifndef MATRIX_H
+#define MATRIX_H
+
 struct Matrix
 {
 	int w, h;
-	float* values;
+	double* values;
 };
 
-struct ANNModel
+static inline int mx_index(int x, int y, const struct Matrix* mx)
 {
-	int n_layers;
-	int* layer_size;
-	struct Matrix* layers;
-	float* activations;
-	float* gradient;
-};
+	return (y * mx->w + x);
+}
 
-void buildMatrix(struct Matrix* dest, int w, int h);
-void freeMatrix(struct Matrix* matrix);
-void randMatrix(struct Matrix* dest);
-void printMatrix(struct Matrix* matrix);
-void dotP(float* dest, float* vector, struct Matrix* matrix);
+static inline double mx_val(int x, int y, const struct Matrix* mx)
+{
+	return mx->values[mx_index(x, y, mx)];
+}
 
+void mx_build(struct Matrix* dest, int w, int h);
+void mx_free(struct Matrix* mx);
+void mx_rand(const struct Matrix* dest);
+void mx_print(const struct Matrix* mx);
+void mx_dotp(double* dest, const double* vector, const struct Matrix* mx);
+
+#endif

@@ -2,58 +2,52 @@
 #include <stdlib.h>
 #include "matrix.h"
 
-void buildMatrix(struct Matrix* dest, int w, int h)
+void mx_build(struct Matrix* dest, int w, int h)
 {
     dest->w = w;
     dest->h = h;
-    dest->values = malloc(sizeof(float) * w * h);
+    dest->values = malloc(sizeof(double) * w * h);
 }
 
-void freeMatrix(struct Matrix* matrix)
+void mx_free(struct Matrix* mx)
 {
-    free(matrix->values);
+    free(mx->values);
+	free(mx);
+
+	mx->values = 0;
+	mx = 0;
 }
 
-void randMatrix(struct Matrix* dest)
+void mx_rand(const struct Matrix* dest)
 {
     for (int i = 0; i < dest->w * dest->h; i++)
     {
-        dest->values[i] = (2 * (float)rand() / RAND_MAX - 1);
+        dest->values[i] = (2 * (double)rand() / RAND_MAX - 1);
     }
 }
 
-void printMatrix(struct Matrix* matrix)
+void mx_print(const struct Matrix* mx)
 {
-    for (int y = 0; y < matrix->h; y++)
+    for (int y = 0; y < mx->h; y++)
     {
-        for (int x = 0; x < matrix->w; x++)
+        for (int x = 0; x < mx->w; x++)
         {
-            printf("%f\t", matrix->values[x + matrix->w * y]);
+            printf("%f\t", mx_val(x, y, mx));
         }
         printf("\n");
     }
 }
 
-void dotP(float* dest, float* vector, struct Matrix* matrix)
+void mx_dotp(double* dest, const double* vector, const struct Matrix* mx)
 {
-    float sum = 0;
-    for (int y = 0; y < matrix->h; y++)
+    double sum = 0;
+    for (int y = 0; y < mx->h; y++)
     {
         sum = 0;
-        for (int x = 0; x < matrix->w; x++)
+        for (int x = 0; x < mx->w; x++)
         {
-            sum += vector[y] * matrix->values[x + matrix->w * y];
+            sum += vector[x] * mx_val(x, y, mx);
         }
         dest[y] = sum;
     }
 }
-
-void buildModel(int n_layers, int* layerSizes, struct ANNModel* model)
-{
-    if (n_layers < 2)
-    {
-        perror("Error: model must have at least one input and one output layer.\n");
-        return;
-    }   
-}
-
