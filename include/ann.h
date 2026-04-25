@@ -16,11 +16,13 @@ struct ANNModel
 	double (*act_dfn)(double);	// Derivative of activation function
 };
 
-bool build_model(int inp_size, int n_layers, int* layerSizes, struct ANNModel* model, double (*act_fn)(double), double (*act_dfn)(double));
+bool ann_build(int inp_size, int n_layers, int* layerSizes, struct ANNModel* model, double (*act_fn)(double), double (*act_dfn)(double));
 
-bool forward_prop_1D(const double* input, const int input_size, const struct ANNModel* model);
+bool ann_forward_prop_1D(const double* input, const int input_size, const struct ANNModel* model);
 
-void free_model(struct ANNModel* model);
+void ann_free(struct ANNModel* model);
+
+void ann_print(const struct ANNModel* model);
 
 // A partial ANN model that can be connected with other models (idk maybe not implement this)
 struct p_ANNModel

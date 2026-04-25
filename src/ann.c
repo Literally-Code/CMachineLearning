@@ -5,7 +5,7 @@
 #include "ann.h"
 #include "matrix.h"
 
-bool build_model(int inp_size, int n_layers, int* layerSizes, struct ANNModel* model, double (*act_fn)(double), double (*act_dfn)(double))
+bool ann_build(int inp_size, int n_layers, int* layerSizes, struct ANNModel* model, double (*act_fn)(double), double (*act_dfn)(double))
 {
     if (n_layers < 2)
     {
@@ -21,7 +21,7 @@ bool build_model(int inp_size, int n_layers, int* layerSizes, struct ANNModel* m
 	model->layers = (struct Matrix**)malloc(sizeof(struct Matrix*) * n_layers);
 
 	// Apply the precursor data
-	memcpy(model->layer_size, layerSizes, sizeof(int));
+	memcpy(model->layer_size, layerSizes, sizeof(int) * n_layers);
 	model->act_fn = act_fn;
 	model->act_dfn = act_dfn;
 
@@ -37,13 +37,14 @@ bool build_model(int inp_size, int n_layers, int* layerSizes, struct ANNModel* m
 		int curr_layer_size = model->layer_size[i];
 		struct Matrix* weights = (struct Matrix*)malloc(sizeof(struct Matrix));
 		mx_build(weights, prev_layer_size, curr_layer_size);
+		mx_rand(weights);
 		model->layers[i] = weights;
 		prev_layer_size = curr_layer_size;
 	}
 	return true;
 }
 
-bool forward_prop_1D(const double* input, const int input_size, const struct ANNModel* model)
+bool ann_forward_prop_1D(const double* input, const int input_size, const struct ANNModel* model)
 {
 	// TODO: This causes segfault
 	if (input_size != model->layers[0]->w)
@@ -69,7 +70,7 @@ bool forward_prop_1D(const double* input, const int input_size, const struct ANN
 	return true;
 }
 
-void free_model(struct ANNModel* model)
+void ann_free(struct ANNModel* model)
 {
 	for (int i = 0; i < model->n_layers; i++)
 	{
@@ -82,4 +83,33 @@ void free_model(struct ANNModel* model)
 	free(model->activations);
 	free(model->deltas);
 	free(model);
+}
+
+void ann_print(const struct ANNModel* model)
+{
+	printf("---Hyperparameters---\n");
+	printf("Number of Layers: %d\n", model->n_layers);
+	printf("Layer Sizes\n");
+	for (int i = 0; i < model->n_layers; i++)
+	{
+		printf("%d ", model->layer_size[i]);
+	}
+	putchar('\n');
+	printf("---Model---\n");
+	for (int i = 0; i < model->n_layers; i++)
+	{
+		printf("-Layer %d\nWeights\n", i);
+		mx_print(model->layers[i]);
+		printf("Activations/Deltas\n");
+		for (int j = 0; j < model->layer_size[i]; j++)
+		{
+			printf("%f ", model->activations[i][j]);
+		}
+		putchar('\n');
+		for (int j = 0; j < model->layer_size[i]; j++)
+		{
+			printf("%f ", model->deltas[i][j]);
+		}
+		putchar('\n');
+	}
 }

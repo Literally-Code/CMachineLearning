@@ -12,13 +12,18 @@ int main(int argc, char** argv)
     
 	struct ANNModel* model = (struct ANNModel*)malloc(sizeof(struct ANNModel));
 
-	bool build_success = build_model(3, 3, &layer_sizes, model, sigmoid, d_sigmoid);
+	bool build_success = ann_build(3, 3, (int*)layer_sizes, model, sigmoid, d_sigmoid);
 
 	if (!build_success)
 		exit(1);
 	
-	forward_prop_1D(&input, 3, &model);
+	printf("---BEFORE---\n");
+	ann_print(model);
 
-	printf("Forward prop finished with no errors\n");
+	ann_forward_prop_1D((double*)input, 3, model);
+
+	printf("---AFTER--- Forward prop finished with no errors\n");
+
+	ann_print(model);
 }
 
