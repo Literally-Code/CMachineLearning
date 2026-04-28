@@ -5,7 +5,13 @@
 #include "ann.h"
 #include "matrix.h"
 
-bool ann_build(int inp_size, int n_layers, int* layerSizes, struct ANNModel* model, double (*act_fn)(double), double (*act_dfn)(double))
+bool ann_build(
+		int inp_size, 
+		int n_layers, int* layerSizes, 
+		struct ANNModel* model, 
+		struct LayerActivator hidden_activator,
+		struct LayerActivator out_activator
+	)
 {
     if (n_layers < 2)
     {
@@ -22,8 +28,8 @@ bool ann_build(int inp_size, int n_layers, int* layerSizes, struct ANNModel* mod
 
 	// Apply the precursor data
 	memcpy(model->layer_size, layerSizes, sizeof(int) * n_layers);
-	model->act_fn = act_fn;
-	model->act_dfn = act_dfn;
+	model->hidden_activator = hidden_activator;
+	model->out_activator = out_activator;
 
 	// Initialize layers
 	int prev_layer_size = inp_size;
@@ -46,7 +52,6 @@ bool ann_build(int inp_size, int n_layers, int* layerSizes, struct ANNModel* mod
 
 bool ann_forward_prop_1D(const double* input, const int input_size, const struct ANNModel* model)
 {
-	// TODO: This causes segfault
 	if (input_size != model->layers[0]->w)
 	{
 		perror("Input size does not fit model hyperparameters\n");
@@ -54,19 +59,45 @@ bool ann_forward_prop_1D(const double* input, const int input_size, const struct
 	}
 
 	double* prev_activations = input;
+	int largest_layer = 0;
+	double* buffer = NULL;
 
 	for (int i = 0; i < model->n_layers; i++)
 	{
 		mx_dotp(model->activations[i], prev_activations, model->layers[i]);
-
-		for (int j = 0; j < model->layer_size[j]; j++)
+		
+		// Allocate more memory to the buffer if the layer is larger than the current buffer
+		if (model->layer_size[i] > largest_layer) 
 		{
-			model->deltas[i][j] = model->act_dfn(model->activations[i][j]);
-			model->activations[i][j] = model->act_fn(model->activations[i][j]);
+			if (buffer != NULL)
+			{
+				free(buffer);
+			}
+
+			buffer = (double*)malloc(sizeof(double) * model->layer_size[i]);
+			largest_layer = model->layer_size[i];
+		}
+
+		if (i != model->n_layers - 1)
+		{
+			model->hidden_activator.dfn(buffer, model->activations[i], (size_t)model->layer_size[i]);
+			memcpy(model->deltas[i], buffer, sizeof(double) * model->layer_size[i]);
+
+			model->hidden_activator.fn(buffer, model->activations[i], (size_t)model->layer_size[i]);
+			memcpy(model->activations[i], buffer, sizeof(double) * model->layer_size[i]);
+		}
+		else
+		{
+			model->out_activator.dfn(buffer, model->activations[i], (size_t)model->layer_size[i]);
+			memcpy(model->deltas[i], buffer, sizeof(double) * model->layer_size[i]);
+
+			model->out_activator.fn(buffer, model->activations[i], (size_t)model->layer_size[i]);
+			memcpy(model->activations[i], buffer, sizeof(double) * model->layer_size[i]);
 		}
 
 		prev_activations = model->activations[i];
 	}
+
 	return true;
 }
 
