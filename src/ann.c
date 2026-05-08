@@ -5,6 +5,15 @@
 #include "ann.h"
 #include "matrix.h"
 
+void ann_alloc(struct ANNModel* model, int n_layers)
+{
+	model->n_layers = n_layers;
+	model->layer_size = (int*)malloc(sizeof(int) * n_layers);
+	model->activations = (double**)malloc(sizeof(double*) * n_layers);
+	model->deltas = (double**)malloc(sizeof(double*) * n_layers);
+	model->layers = (struct Matrix**)malloc(sizeof(struct Matrix*) * n_layers);
+}
+
 bool ann_build(
 		int inp_size, 
 		int n_layers, int* layerSizes, 
@@ -20,11 +29,7 @@ bool ann_build(
     }
 
 	// Allocate memory for the model
-	model->n_layers = n_layers;
-	model->layer_size = (int*)malloc(sizeof(int) * n_layers);
-	model->activations = (double**)malloc(sizeof(double*) * n_layers);
-	model->deltas = (double**)malloc(sizeof(double*) * n_layers);
-	model->layers = (struct Matrix**)malloc(sizeof(struct Matrix*) * n_layers);
+	ann_alloc(n_layers);
 
 	// Apply the precursor data
 	memcpy(model->layer_size, layerSizes, sizeof(int) * n_layers);
@@ -99,6 +104,16 @@ bool ann_forward_prop_1D(const double* input, const int input_size, const struct
 	}
 
 	return true;
+}
+
+bool ann_back_prop_1D(struct MetricHandler* metrics, struct ANNModel* model, double* t)
+{
+	// Init the delta vector for the last layer using loss metric
+	metrics->init_delta(model, t);
+
+	// Update weights for the last layer
+	
+	// Iterate backwards, updating the deltas and weights
 }
 
 void ann_free(struct ANNModel* model)
