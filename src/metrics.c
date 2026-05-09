@@ -1,5 +1,5 @@
+#include <stdlib.h>
 #include "metrics.h"
-#include "ann.h"
 
 void metric_d_ssr(double* out, double* p, double* t, size_t size)
 {
@@ -23,7 +23,7 @@ double metric_ssr(double* out, double* p, double* t, size_t size)
 
 void metric_ssr_init_delta(struct ANNModel* model, double* t)
 {
-	Matrix* out_delta = model->deltas[model->n_layers - 1];
+	struct Matrix* out_delta = model->deltas[model->n_layers - 1];
 	int out_size = model->layer_size[model->n_layers - 1];
 
 	double* dt_dp = (double*)malloc(sizeof(double) * out_size);

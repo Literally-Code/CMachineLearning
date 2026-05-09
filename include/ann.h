@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "actvfn.h"
+#include "metrics.h"
 
 // A fully defined, standalone ANN model with an input layer, optional hidden layers, and an output layer
 // Can take a vector or flatten a 2D matrix as input
@@ -20,6 +21,8 @@ struct ANNModel
 bool ann_build(int inp_size, int n_layers, int* layerSizes, struct ANNModel* model, struct LayerActivator hidden_activator, struct LayerActivator out_activator);
 
 bool ann_forward_prop_1D(const double* input, const int input_size, const struct ANNModel* model);
+
+bool ann_back_prop_1D(struct MetricHandler* metrics, struct ANNModel* model, double* t, double eta);
 
 void ann_free(struct ANNModel* model);
 

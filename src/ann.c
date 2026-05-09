@@ -29,7 +29,7 @@ bool ann_build(
     }
 
 	// Allocate memory for the model
-	ann_alloc(n_layers);
+	ann_alloc(model, n_layers);
 
 	// Apply the precursor data
 	memcpy(model->layer_size, layerSizes, sizeof(int) * n_layers);
@@ -47,7 +47,8 @@ bool ann_build(
 		// Initialize random weights for each layer
 		int curr_layer_size = model->layer_size[i];
 		struct Matrix* weights = (struct Matrix*)malloc(sizeof(struct Matrix));
-		mx_build(weights, prev_layer_size, curr_layer_size);
+		// + 1; The last weight corresponds with the bias
+		mx_build(weights, prev_layer_size + 1, curr_layer_size);
 		mx_rand(weights);
 		model->layers[i] = weights;
 		prev_layer_size = curr_layer_size;
@@ -66,54 +67,86 @@ bool ann_forward_prop_1D(const double* input, const int input_size, const struct
 	double* prev_activations = input;
 	int largest_layer = 0;
 	double* buffer = NULL;
+	double* ps_in = (double*)malloc(sizeof(double) * (input_size + 1));
 
 	for (int i = 0; i < model->n_layers; i++)
 	{
-		mx_dotp(model->activations[i], prev_activations, model->layers[i]);
-		
 		// Allocate more memory to the buffer if the layer is larger than the current buffer
-		if (model->layer_size[i] > largest_layer) 
+		if (model->layer_size[i] > largest_layer || model->layer_size[i] > input_size) 
 		{
 			if (buffer != NULL)
 			{
 				free(buffer);
 			}
 
+			if (ps_in != NULL)
+			{
+				free(ps_in);
+			}
+
 			buffer = (double*)malloc(sizeof(double) * model->layer_size[i]);
+			ps_in = (double*)malloc(sizeof(double) * (model->layer_size[i] + 1));
 			largest_layer = model->layer_size[i];
 		}
+		
+		memcpy(ps_in, prev_activations, sizeof(double) * (model->layers[i]->w - 1));
+		// Apply '1' to value of last entry in pseudo-input to account for bias
+		ps_in[model->layers[i]->w - 1] = 1;
+		mx_dotp(model->activations[i], ps_in, model->layers[i]);
 
-		if (i != model->n_layers - 1)
-		{
-			model->hidden_activator.dfn(buffer, model->activations[i], (size_t)model->layer_size[i]);
-			memcpy(model->deltas[i], buffer, sizeof(double) * model->layer_size[i]);
+		struct LayerActivator activator = ((i == model->n_layers - 1) ? model->out_activator : model->hidden_activator);
+		activator.dfn(buffer, model->activations[i], (size_t)model->layer_size[i]);
+		memcpy(model->deltas[i], buffer, sizeof(double) * model->layer_size[i]);
 
-			model->hidden_activator.fn(buffer, model->activations[i], (size_t)model->layer_size[i]);
-			memcpy(model->activations[i], buffer, sizeof(double) * model->layer_size[i]);
-		}
-		else
-		{
-			model->out_activator.dfn(buffer, model->activations[i], (size_t)model->layer_size[i]);
-			memcpy(model->deltas[i], buffer, sizeof(double) * model->layer_size[i]);
-
-			model->out_activator.fn(buffer, model->activations[i], (size_t)model->layer_size[i]);
-			memcpy(model->activations[i], buffer, sizeof(double) * model->layer_size[i]);
-		}
-
+		activator.fn(buffer, model->activations[i], (size_t)model->layer_size[i]);
+		memcpy(model->activations[i], buffer, sizeof(double) * model->layer_size[i]);
 		prev_activations = model->activations[i];
+	}
+
+	if (buffer != NULL && ps_in != NULL)
+	{
+		free(buffer);
+		free(ps_in);
 	}
 
 	return true;
 }
 
-bool ann_back_prop_1D(struct MetricHandler* metrics, struct ANNModel* model, double* t)
+bool ann_back_prop_1D(struct MetricHandler* metrics, struct ANNModel* model, double* t, double eta)
 {
-	// Init the delta vector for the last layer using loss metric
-	metrics->init_delta(model, t);
-
-	// Update weights for the last layer
+	int n_layers = model->n_layers;
 	
-	// Iterate backwards, updating the deltas and weights
+	// Propagate backwards
+	double delta_sum = 0;
+	for (int li = n_layers - 1; li >= 0; li--)
+	{
+		struct Matrix* weights = model->layers[li];
+
+		if (li == n_layers - 1)
+		{
+			metrics->init_delta(model, t);
+		}
+		
+		for (int cli = 0; cli < weights->h; cli++)
+		{
+			// For each ingress weight
+			for (int plwi = 0; plwi < weights->w - 1; plwi++)
+			{
+				int w_index = mx_index(plwi, cli, weights);
+
+				// The magic
+				if (li < n_layers - 1)
+				{
+					model->deltas[li][cli] *= delta_sum;
+					delta_sum = 0;
+				}
+
+				weights->values[w_index] -= eta * model->activations[li][plwi] * model->deltas[li][cli];
+				delta_sum += weights->values[w_index] * model->deltas[li][cli];
+			}
+		}
+	}
+	return true;
 }
 
 void ann_free(struct ANNModel* model)
@@ -144,8 +177,9 @@ void ann_print(const struct ANNModel* model)
 	printf("---Model---\n");
 	for (int i = 0; i < model->n_layers; i++)
 	{
-		printf("-Layer %d\nWeights\n", i);
+		printf("-Layer %d\nWeights, Bias\n", i);
 		mx_print(model->layers[i]);
+		printf("Biases\n");
 		printf("Activations/Deltas\n");
 		for (int j = 0; j < model->layer_size[i]; j++)
 		{

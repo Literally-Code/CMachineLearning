@@ -2,6 +2,9 @@
 #define ERROR_METRICS_H
 
 #include <stddef.h>
+#include "ann.h"
+
+struct ANNModel;
 
 struct MetricHandler 
 {

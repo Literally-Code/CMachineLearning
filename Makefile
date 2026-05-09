@@ -5,12 +5,12 @@ LIBS = -lm
 TARGET = program
 BUILD_DIR = build
 SRC_DIR = src
-OBJ = $(BUILD_DIR)/main.o $(BUILD_DIR)/matrix.o $(BUILD_DIR)/ann.o $(BUILD_DIR)/actvfn.o
+OBJ = $(BUILD_DIR)/main.o $(BUILD_DIR)/matrix.o $(BUILD_DIR)/ann.o $(BUILD_DIR)/actvfn.o $(BUILD_DIR)/metrics.o
 
 GDB_DIR = gdb
 DEBUG_CFLAGS = -Wall -Wextra -g -O0 -I$(INCLUDE_PATH)
 DEBUG_LIBS = -lm
-DEBUG_OBJ = $(GDB_DIR)/main.o $(GDB_DIR)/matrix.o $(GDB_DIR)/ann.o $(GDB_DIR)/actvfn.o
+DEBUG_OBJ = $(GDB_DIR)/main.o $(GDB_DIR)/matrix.o $(GDB_DIR)/ann.o $(GDB_DIR)/actvfn.o $(GDB_DIR)/metrics.o
 
 $(BUILD_DIR)/$(TARGET): $(OBJ) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(OBJ) -o $(BUILD_DIR)/$(TARGET) $(LIBS)
@@ -30,15 +30,17 @@ $(BUILD_DIR):
 $(GDB_DIR):
 	mkdir -p $(GDB_DIR)
 
-$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_PATH)/matrix.h $(INCLUDE_PATH)/ann.h $(INCLUDE_PATH)/actvfn.h
+$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_PATH)/matrix.h $(INCLUDE_PATH)/ann.h $(INCLUDE_PATH)/actvfn.h $(INCLUDE_PATH)/metrics.h
 $(BUILD_DIR)/matrix.o: $(SRC_DIR)/matrix.c $(INCLUDE_PATH)/matrix.h
 $(BUILD_DIR)/ann.o: $(SRC_DIR)/ann.c $(INCLUDE_PATH)/ann.h
 $(BUILD_DIR)/actvfn.o: $(SRC_DIR)/actvfn.c $(INCLUDE_PATH)/actvfn.h
+$(BUILD_DIR)/metrics.o: $(SRC_DIR)/metrics.c $(INCLUDE_PATH)/metrics.h
 
-$(GDB_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_PATH)/matrix.h $(INCLUDE_PATH)/ann.h $(INCLUDE_PATH)/actvfn.h
+$(GDB_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_PATH)/matrix.h $(INCLUDE_PATH)/ann.h $(INCLUDE_PATH)/actvfn.h $(INCLUDE_PATH)/metrics.h
 $(GDB_DIR)/matrix.o: $(SRC_DIR)/matrix.c $(INCLUDE_PATH)/matrix.h
 $(GDB_DIR)/ann.o: $(SRC_DIR)/ann.c $(INCLUDE_PATH)/ann.h
 $(GDB_DIR)/actvfn.o: $(SRC_DIR)/actvfn.c $(INCLUDE_PATH)/actvfn.h
+$(GDB_DIR)/metrics.o: $(SRC_DIR)/metrics.c $(INCLUDE_PATH)/metrics.h
 
 debug: $(GDB_DIR)/$(TARGET)
 

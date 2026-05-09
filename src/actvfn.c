@@ -14,7 +14,7 @@ double d_sigmoid(double x)
 
 void sigmoid_layer(double* out, double* x, size_t size)
 {
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		out[i] = sigmoid(x[i]);
 	}
@@ -22,7 +22,7 @@ void sigmoid_layer(double* out, double* x, size_t size)
 
 void d_sigmoid_layer(double* out, double* x, size_t size)
 {
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		out[i] = d_sigmoid(x[i]);
 	}
@@ -32,12 +32,12 @@ void d_sigmoid_layer(double* out, double* x, size_t size)
 void softmax_layer(double* out, double* x, size_t size)
 {
 	double expsum = 0;
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		expsum += exp(x[i]);
 	}
 
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		out[i] = exp(x[i]) / expsum;
 	}
